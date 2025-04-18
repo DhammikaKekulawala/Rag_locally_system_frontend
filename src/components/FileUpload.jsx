@@ -50,29 +50,29 @@ const FileUpload = ({ onUploadSuccess }) => {
 
     setProgress(0);
     const formData = new FormData();
-    formData.append('pdf', file);
+    formData.append('file', file); // Changed from 'pdf' to 'file' to match FastAPI endpoint
 
     try {
-      // Simulate API call with progress (replace with actual endpoint)
-      const simulateUpload = () =>
-        new Promise((resolve) => {
-          let progress = 0;
-          const interval = setInterval(() => {
-            progress += 10;
-            setProgress(progress);
-            if (progress >= 100) {
-              clearInterval(interval);
-              resolve({ status: 'success', message: 'PDF uploaded successfully' });
-            }
-          }, 200);
-        });
+      const response = await fetch('http://127.0.0.1:8000/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-      const response = await simulateUpload();
-      onUploadSuccess(response.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data.message) {
+        throw new Error('Invalid response format from server');
+      }
+
+      onUploadSuccess(data.message);
       setFile(null);
       setProgress(0);
     } catch (err) {
-      setError('Failed to upload PDF');
+      setError(`Failed to upload PDF: ${err.message}`);
       setProgress(0);
     }
   }, [file, onUploadSuccess]);

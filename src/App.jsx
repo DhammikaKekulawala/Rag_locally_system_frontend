@@ -20,19 +20,27 @@ const App = () => {
   const handleAskQuestion = useCallback(async (question) => {
     setIsProcessing(true);
     try {
-      // Simulate API call to backend (replace with actual endpoint)
-      const simulateAnswer = () =>
-        new Promise((resolve) =>
-          setTimeout(
-            () => resolve({ answer: 'Sample response based on PDF content.' }),
-            1000
-          )
-        );
-      const response = await simulateAnswer();
-      setResponses((prev) => [...prev, { question, answer: response.answer }]);
+      const response = await fetch('http://127.0.0.1:8000/question', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data.answer) {
+        throw new Error('Invalid response format from server');
+      }
+
+      setResponses((prev) => [...prev, { question, answer: data.answer }]);
     } catch (err) {
       // eslint-disable-next-line no-alert
-      alert('Error processing question');
+      alert(`Error processing question: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }
